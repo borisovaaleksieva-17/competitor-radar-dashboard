@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Leads - Competitor Lead Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8f9fc; margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; flex-shrink: 0; }
+        .logo-area { padding: 24px; border-bottom: 1px solid #e5e7eb; color: #5b45ff; font-weight: 800; font-size: 16px; display: flex; gap: 10px; align-items: center; }
+        .menu { padding: 20px; }
+        .menu a { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #6b7280; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-weight: 500; font-size: 14px; }
+        .menu a:hover { background: #f9fafb; color: #111827; }
+        .menu a.active { background: #f5f3ff; color: #5b45ff; font-weight: 600; }
+
+        .main { flex: 1; padding: 32px 36px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .title { font-size: 22px; font-weight: 700; color: #111827; }
+
+        .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .search-form { display: flex; gap: 8px; }
+        .search-input { padding: 9px 14px; border: 1px solid #e5e7eb; border-radius: 8px; width: 260px; outline: none; font-family: inherit; font-size: 13px; }
+        .search-input:focus { border-color: #5b45ff; box-shadow: 0 0 0 3px rgba(91,69,255,0.1); }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: 0.2s; }
+        .btn-primary { background: #5b45ff; color: white; }
+        .btn-primary:hover { background: #4f39e3; }
+        .btn-success { background: #00c853; color: white; }
+        .btn-success:hover { background: #00a846; }
+        .btn-outline { background: white; color: #374151; border: 1px solid #e5e7eb; }
+        .btn-outline:hover { background: #f9fafb; border-color: #d1d5db; }
+        .btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+        .btn-danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+        .btn-export { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+        .btn-export:hover { background: #059669; color: white; border-color: #059669; }
+
+        .selection-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #1d4ed8;
+            font-weight: 500;
+        }
+        .selection-bar.visible { display: flex; }
+        #selCount { font-weight: 700; }
+
+        .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; background: #f9fafb; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+        td { padding: 13px 16px; border-bottom: 1px solid #f3f4f6; font-size: 13px; color: #111827; }
+        tr:hover td { background: #fafafa; }
+        tr.selected td { background: #eff6ff; }
+
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge-new { background: #eff6ff; color: #3b82f6; }
+        .badge-err { background: #fef2f2; color: #ef4444; }
+        .badge-ok { background: #ecfdf5; color: #10b981; }
+        .badge-inhouse { background: #f5f3ff; color: #7c3aed; }
+
+        .domain-link { font-weight: 600; color: #111827; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+        .domain-link:hover { color: #5b45ff; }
+        .domain-link svg { opacity: 0.4; width: 12px; height:12px; }
+
+        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid #f3f4f6; background: #f9fafb; flex-shrink: 0; }
+        .page-info { font-size: 13px; color: #6b7280; }
+        .page-btns { display: flex; gap: 6px; }
+        .page-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid #e5e7eb; background: white; color: #374151; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: 0.15s; }
+        .page-btn:hover { background: #f3f4f6; }
+        .page-btn.active { background: #5b45ff; color: white; border-color: #5b45ff; }
+        .page-btn:disabled, .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+        .empty-state { padding: 60px; text-align: center; color: #6b7280; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Floating scan progress mini-bar */
+        #miniProgress {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1f1f2e;
+            color: white;
+            border-radius: 14px;
+            padding: 16px 20px;
+            width: 300px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+        #miniProgress .mp-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        #miniProgress .mp-track { background: rgba(255,255,255,0.1); border-radius: 100px; height: 6px; overflow: hidden; margin-bottom: 8px; }
+        #miniProgress .mp-bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #5b45ff); border-radius: 100px; transition: width 0.4s; }
+        #miniProgress .mp-domain { font-size: 11px; color: rgba(255,255,255,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* History Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: white; width: 500px; padding: 24px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 80vh; display: flex; flex-direction: column; }
+        .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #111827; display: flex; justify-content: space-between; align-items: center; }
+        .history-item { padding: 16px 12px; border-bottom: 1px solid #f3f4f6; }
+        .history-item:last-child { border-bottom: none; }
+        .change-pill { background: #e6f9ed; color: #00c853; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .nav-link { display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #6b7280; padding: 10px; border-radius: 8px; margin-bottom: 5px; font-weight: 500; font-size: 14px; }
+        .nav-link:hover { background: #f9fafb; color: #111827; }
+        .nav-link.active { background: #f5f3ff; color: #5b45ff; font-weight: 600; }
+        .nav-badge { background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-area"><i data-feather="radio"></i> Competitor Lead Radar</div>
+        <div class="menu">
+            <a href="/dashboard" class="nav-link"><i data-feather="arrow-left"></i> Back to Dashboard</a>
+            <div style="margin: 20px 0 10px 10px; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase;">Database</div>
+            <a href="/leads" class="nav-link {{ 'active' if not filter else '' }}">
+                <div style="display:flex; align-items:center; gap:10px;"><i data-feather="list"></i> All Leads</div>
+            </a>
+            <a href="/leads?filter=firewall" class="nav-link {{ 'active' if filter == 'firewall' else '' }}">
+                <div style="display:flex; align-items:center; gap:10px;"><i data-feather="shield-off"></i> Firewall Issues</div>
+                {% if firewall_count > 0 %}<span class="nav-badge">{{ firewall_count }}</span>{% endif %}
+            </a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="page-header">
+            <div>
+                <div class="title">
+                    {% if filter == 'firewall' %}Firewall Blocks Tracker{% else %}All Leads Database{% endif %}
+                </div>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px;">
+                    {{ total_count }} domains found · Page {{ page }}/{{ total_pages }}
+                </div>
+            </div>
+            <div class="toolbar">
+                {% if filter == 'firewall' %}
+                <button onclick="rescanAllFirewall()" class="btn btn-primary" style="background: #ef4444;">
+                    <i data-feather="refresh-cw" style="width:14px"></i> Rescan All Blocked
+                </button>
+                {% endif %}
+                <form class="search-form" method="GET" action="/leads">
+                    <input type="hidden" name="page" value="1">
+                    {% if filter %}<input type="hidden" name="filter" value="{{ filter }}">{% endif %}
+                    <input type="text" name="search" class="search-input" placeholder="Search..." value="{{ search }}">
+                    <button type="submit" class="btn btn-outline"><i data-feather="search" style="width:14px"></i></button>
+                    {% if search %}<a href="/leads{% if filter %}?filter={{ filter }}{% endif %}" class="btn btn-outline"><i data-feather="x" style="width:14px"></i></a>{% endif %}
+                </form>
+                <a href="/leads/export_csv?search={{ search }}&filter={{ filter }}" class="btn btn-export">
+                    <i data-feather="download" style="width:14px"></i> Export CSV
+                </a>
+            </div>
+        </div>
+
+        <div class="selection-bar" id="selectionBar">
+            <i data-feather="check-square" style="width:16px"></i>
+            <span><span id="selCount">0</span> domains selected</span>
+            
+            <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <select id="bulkOwnerSelect" class="search-input" style="width:160px; padding:7px 10px;">
+                    <option value="">Change owner to...</option>
+                    {% for member in team %}
+                    <option value="{{ member }}">{{ member }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-primary" onclick="changeSelectedOwner()">Apply</button>
+            </div>
+
+            <button class="btn btn-success" onclick="scanSelected()" style="margin-left:12px;">
+                <i data-feather="play" style="width:14px"></i> Scan
+            </button>
+            
+            <button class="btn btn-danger" onclick="deleteSelected()" style="margin-left:6px;">
+                <i data-feather="trash-2" style="width:14px"></i> Delete
+            </button>
+            
+            <button class="btn btn-outline" onclick="clearSelection()" style="margin-left:6px;">Clear</button>
+        </div>
+
+        <div class="card">
+            <div style="overflow-y:auto; flex:1;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
+                            <th>Domain</th>
+                            <th>Current Manager</th>
+                            <th>Owner</th>
+                            <th>Last Scanned</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr id="row-{{ row[0]|replace('.','_') }}">
+                            <td><input type="checkbox" class="row-cb" value="{{ row[0] }}" onchange="updateSelection()"></td>
+                            <td>
+                                <div style="display:flex; align-items:center;">
+                                    <a href="https://{{ row[0] }}/ads.txt" target="_blank" class="domain-link">
+                                        {{ row[0] }}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    </a>
+                                    <button onclick="showHistory('{{ row[0] }}')" style="background:none; border:none; cursor:pointer; color:#9ca3af; margin-left:8px; display:flex; padding:4px;" title="View History">
+                                        <i data-feather="clock" style="width:14px; height:14px;"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                {% set mgr = row[1] %}
+                                {% if 'New' in mgr %}
+                                    <span class="badge badge-new">New / Pending</span>
+                                {% elif 'In-House' in mgr %}
+                                    <span class="badge badge-inhouse">In-House</span>
+                                {% elif 'Error' in mgr or 'Connection' in mgr or 'No Ads' in mgr or 'Blocked' in mgr %}
+                                    <span class="badge badge-err">{{ mgr }}</span>
+                                {% else %}
+                                    <span class="badge badge-ok">{{ mgr }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="color:#6b7280;">{{ row[3] }}</td>
+                            <td style="color:#9ca3af; font-size:12px;">{{ row[2] }}</td>
+                            <td style="text-align:right;">
+                                <a href="/delete_domain/{{ row[0] }}?source=leads" onclick="return confirm('Delete {{ row[0] }}?')" style="color:#d1d5db; text-decoration:none;">
+                                    <i data-feather="trash-2" style="width:15px;"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i data-feather="inbox" style="width:40px;height:40px;opacity:0.3;"></i>
+                                <div>{% if search %}No domains found matching "{{ search }}"{% else %}Database is empty{% endif %}</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="page-info">
+                    Showing {{ rows|length }} of {{ total_count }} domains
+                </div>
+                <div class="page-btns">
+                    {% if page > 1 %}
+                    <a href="/leads?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}" class="page-btn">← Prev</a>
+                    {% else %}
+                    <span class="page-btn disabled">← Prev</span>
+                    {% endif %}
+
+                    {% set start_p = [1, page - 2] | max %}
+                    {% set end_p = [total_pages, page + 2] | min %}
+                    {% for p in range(start_p, end_p + 1) %}
+                    <a href="/leads?page={{ p }}&search={{ search }}&filter={{ filter }}"
+                       class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                    <a href="/leads?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}" class="page-btn">Next →</a>
+                    {% else %}
+                    <span class="page-btn disabled">Next →</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="historyDomainTitle">Domain History</span>
+                <button onclick="closeHistory()" style="background:none; border:none; cursor:pointer; font-size:24px; color:#6b7280; line-height:1;">&times;</button>
+            </div>
+            <div id="historyContent" style="overflow-y:auto; padding-right:8px; margin-right:-8px;">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini progress bar for active scans -->
+    <div id="miniProgress">
+        <div class="mp-title">
+            <span>⚡ Scanning...</span>
+            <span id="mpPct">0%</span>
+        </div>
+        <div class="mp-track"><div class="mp-bar" id="mpBar" style="width:0%"></div></div>
+        <div class="mp-domain" id="mpDomain">Starting...</div>
+    </div>
+
+    <script>
+        feather.replace();
+
+        function showHistory(domain) {
+            document.getElementById('historyModal').style.display = 'flex';
+            document.getElementById('historyDomainTitle').textContent = domain + ' History';
+            document.getElementById('historyContent').innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280;"><i data-feather="loader" style="animation: spin 1s linear infinite;"></i></div>';
+            feather.replace();
+            
+            fetch('/api/domain_history/' + domain)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        document.getElementById('historyContent').innerHTML = '<div style="text-align:center;padding:30px;color:#9ca3af;">No change history recorded yet.</div>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.forEach(item => {
+                        html += `
+                            <div class="history-item">
+                                <div style="font-size:12px; color:#6b7280; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
+                                    <i data-feather="calendar" style="width:12px; height:12px;"></i> ${item.date}
+                                </div>
+                                <div><span class="change-pill">Change</span> <span style="margin-left:8px;color:#6b7280;text-decoration:line-through;">${item.old}</span> &rarr; <strong style="color:#111827;">${item.new}</strong></div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('historyContent').innerHTML = html;
+                    feather.replace();
+                })
+                .catch(() => {
+                    document.getElementById('historyContent').innerHTML = '<div style="text-align:center;padding:30px;color:#ef4444;">Failed to load history.</div>';
+                });
+        }
+        function closeHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        function updateSelection() {
+            const checked = document.querySelectorAll('.row-cb:checked');
+            const bar = document.getElementById('selectionBar');
+            document.getElementById('selCount').textContent = checked.length;
+            bar.classList.toggle('visible', checked.length > 0);
+            // Highlight rows
+            document.querySelectorAll('.row-cb').forEach(cb => {
+                cb.closest('tr').classList.toggle('selected', cb.checked);
+            });
+        }
+
+        function toggleAll(source) {
+            document.querySelectorAll('.row-cb').forEach(cb => {
+                cb.checked = source.checked;
+            });
+            updateSelection();
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.row-cb').forEach(cb => cb.checked = false);
+            document.getElementById('selectAll').checked = false;
+            updateSelection();
+        }
+
+        function scanSelected() {
+            const domains = Array.from(document.querySelectorAll('.row-cb:checked')).map(cb => cb.value);
+            scanSelectedDomains(domains);
+        }
+
+        function scanSelectedDomains(domains) {
+            if (!domains || !domains.length) return;
+
+            fetch('/scan_selected', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domains })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    startMiniProgress();
+                } else {
+                    alert(data.message || 'Scan already running.');
+                }
+            });
+        }
+
+        function rescanAllFirewall() {
+            if(!confirm('Rescan all domains blocked by firewall?')) return;
+            fetch('/scan_firewall', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    startMiniProgress();
+                } else {
+                    alert(data.message || 'Error starting scan.');
+                }
+            });
+        }
+
+        function deleteSelected() {
+            const domains = Array.from(document.querySelectorAll('.row-cb:checked')).map(cb => cb.value);
+            if (!domains.length) return;
+            if (!confirm(`Are you sure you want to delete ${domains.length} selected domains?`)) return;
+
+            fetch('/delete_selected_domains', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domains })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === 'ok') {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error deleting domains');
+                }
+            });
+        }
+
+        function changeSelectedOwner() {
+            const domains = Array.from(document.querySelectorAll('.row-cb:checked')).map(cb => cb.value);
+            const new_owner = document.getElementById('bulkOwnerSelect').value;
+            if (!domains.length || !new_owner) {
+                alert("Please select domains and choose a new owner.");
+                return;
+            }
+
+            fetch('/change_owner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domains, new_owner })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === 'ok') {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error changing owner');
+                }
+            });
+        }
+
+        // Mini progress polling
+        let miniPollInterval;
+        function startMiniProgress() {
+            document.getElementById('miniProgress').style.display = 'block';
+            clearInterval(miniPollInterval);
+            miniPollInterval = setInterval(pollMini, 800);
+        }
+
+        function pollMini() {
+            fetch('/api/scan_status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('mpBar').style.width = data.percent + '%';
+                    document.getElementById('mpPct').textContent = data.percent + '%';
+                    let domainText = data.domain || '...';
+                    if (data.total > 0 && data.domain) {
+                        domainText = `[${data.current}/${data.total}] ${data.domain}`;
+                    }
+                    document.getElementById('mpDomain').textContent = domainText;
+                    if (!data.running && data.total > 0) {
+                        clearInterval(miniPollInterval);
+                        document.getElementById('mpDomain').textContent = '✅ Done! Reloading...';
+                        setTimeout(() => { location.reload(); }, 1500);
+                    }
+                });
+        }
+
+        // Check if a scan is already running when page loads
+        fetch('/api/scan_status').then(r => r.json()).then(data => {
+            if (data.running) startMiniProgress();
+        });
+    </script>
+</body>
+</html>

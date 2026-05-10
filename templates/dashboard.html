@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Competitor Lead Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        :root {
+            --brand-purple: #5b45ff;
+            --brand-purple-gradient: linear-gradient(135deg, #7c3aed 0%, #5b45ff 100%);
+            --brand-green: #00c853;
+            --brand-green-soft: #e6f9ed;
+            --bg-page: #f8f9fc;
+            --white: #ffffff;
+            --text-dark: #111827;
+            --text-gray: #6b7280;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-page); display: flex; height: 100vh; overflow: hidden; color: var(--text-dark); }
+        .sidebar { width: 260px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+        .logo-area { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .logo-text { color: var(--brand-purple); font-weight: 800; font-size: 16px; }
+        .menu { padding: 24px 16px; flex: 1; overflow-y: auto; }
+        .menu-label { font-size: 11px; text-transform: uppercase; color: var(--text-gray); font-weight: 700; margin: 24px 0 12px 12px; }
+        .nav-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; color: var(--text-gray); text-decoration: none; border-radius: 8px; margin-bottom: 4px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .nav-item:hover { background: var(--bg-page); color: var(--text-dark); }
+        .nav-item.active { background: #f5f3ff; color: var(--brand-purple); font-weight: 600; }
+        .nav-content { display: flex; align-items: center; gap: 10px; }
+        .badge { background: var(--brand-purple); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .badge-danger { background: #fee2e2; color: #ef4444; }
+        .main { flex: 1; overflow-y: auto; }
+        .hero-header { background: var(--brand-purple-gradient); padding: 40px 40px 80px 40px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
+        .hero-title { font-size: 32px; font-weight: 700; margin: 0 0 8px 0; }
+        .btn-group { display: flex; align-items: center; gap: 12px; }
+        .btn-scan { background: white; color: var(--brand-purple); padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); height: 44px; box-sizing: border-box; }
+        .btn-scan:hover { transform: translateY(-1px); box-shadow: 0 6px 8px rgba(0,0,0,0.15); }
+        .btn-secondary { background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; height: 44px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.3); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.3); }
+        .btn-delete-list { background: rgba(255,255,255,0.1); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; height: 44px; box-sizing: border-box; }
+        .btn-delete-list:hover { background: var(--danger); }
+        .content-container { padding: 0 40px 40px 40px; margin-top: -50px; }
+        .card { background: var(--white); border-radius: 12px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--bg-page); }
+        .card-title { font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+        .stat-card { background: var(--white); border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
+        .stat-value { font-size: 36px; font-weight: 800; color: var(--text-dark); margin-top: 4px; letter-spacing: -1px; }
+        .stat-label { color: var(--text-gray); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .table-container { max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        tr { border-bottom: 1px solid var(--bg-page); }
+        td { padding: 16px 12px; font-size: 14px; color: var(--text-dark); }
+        .change-pill { background: var(--brand-green-soft); color: var(--brand-green); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+        .delete-icon { color: #d1d5db; cursor: pointer; transition: 0.2s; position: relative; top: 2px; }
+        .delete-icon:hover { color: var(--danger); }
+        #drillDownSection { display: none; margin-top: 30px; }
+        .btn-outline { border: 1px dashed var(--border); color: var(--text-gray); padding: 10px; border-radius: 6px; text-align: center; display: block; text-decoration: none; font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+        .btn-primary-sm { background: var(--brand-purple); color: white; padding: 10px; border-radius: 6px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; font-size: 13px; font-weight: 600; border: none; width: 100%; cursor: pointer; }
+        .chart-wrapper { position: relative; height: 250px; width: 100%; }
+
+        .controls-area { display: flex; gap: 10px; position: relative; }
+        .btn-action { background: #5b45ff; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .btn-action:hover { background: #4f39e3; }
+        .dropdown-menu { position: absolute; top: 40px; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 250px; padding: 10px; display: none; z-index: 100; }
+        .dropdown-item { padding: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 4px; }
+        .dropdown-item:hover { background: #f3f4f6; }
+
+        .btn-delete-rows { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .btn-delete-rows:hover { background: #ef4444; color: white; border-color: #ef4444; }
+
+        .btn-delete-manager { background-color: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; margin-left: auto; }
+        .btn-delete-manager:hover { background-color: #ef4444; color: white; border-color: #ef4444; }
+
+        /* MODAL STYLES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: white; width: 400px; padding: 24px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text-dark); }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-gray); }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        .form-textarea { height: 120px; resize: vertical; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { flex: 1; background: #f3f4f6; color: var(--text-dark); border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-submit { flex: 1; background: var(--brand-purple); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        
+        /* Floating scan progress mini-bar */
+        #miniProgress { display: none; position: fixed; bottom: 24px; right: 24px; background: #1f1f2e; color: white; border-radius: 14px; padding: 16px 20px; width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 999; }
+        #miniProgress .mp-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        #miniProgress .mp-track { background: rgba(255,255,255,0.1); border-radius: 100px; height: 6px; overflow: hidden; margin-bottom: 8px; }
+        #miniProgress .mp-bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #5b45ff); border-radius: 100px; transition: width 0.4s; }
+        #miniProgress .mp-domain { font-size: 11px; color: rgba(255,255,255,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-area">
+            <i data-feather="radar" style="color:var(--brand-purple);"></i>
+            <div class="logo-text">Competitor Lead Radar</div>
+        </div>
+        <div class="menu">
+            <div class="menu-label">Overview</div>
+            <a href="/dashboard" class="nav-item {{ 'active' if not owner else '' }}">
+                <div class="nav-content"><i data-feather="globe"></i> <span>Global Dashboard</span></div>
+            </a>
+
+            <div class="menu-label">Database</div>
+            <a href="/leads" class="nav-item">
+                <div class="nav-content"><i data-feather="list"></i> <span>All Leads List</span></div>
+            </a>
+            <a href="/leads?filter=firewall" class="nav-item">
+                <div class="nav-content" style="justify-content: space-between; width: 100%;">
+                    <div style="display:flex; align-items:center; gap:10px;"><i data-feather="shield-off"></i> <span>Firewall Issues</span></div>
+                    {% if firewall_count > 0 %}<span class="badge badge-danger">{{ firewall_count }}</span>{% endif %}
+                </div>
+            </a>
+
+            <div class="menu-label">BD Team</div>
+            {% for member in team %}
+            <a href="/dashboard/{{ member }}" class="nav-item {{ 'active' if owner == member else '' }}">
+                <div class="nav-content"><i data-feather="user"></i> <span>{{ member }}</span></div>
+                {% if badges[member] > 0 %}<span class="badge">{{ badges[member] }}</span>{% endif %}
+            </a>
+            {% endfor %}
+
+            <div style="margin-top: 30px; padding: 0 15px;">
+                <button onclick="toggleModal()" class="btn-primary-sm" style="margin-bottom: 8px;">
+                    <i data-feather="plus" style="width:14px;"></i> Add Manually
+                </button>
+                <a href="/upload" class="btn-outline">Import CSV</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="hero-header">
+            <div>
+                <h1 class="hero-title">
+                    {% if not owner or owner == "Global" %}Main Dashboard{% else %}{{ owner }}'s Dashboard{% endif %}
+                </h1>
+                <div style="opacity: 0.9;">Tracking {{ total }} domains</div>
+            </div>
+            <div class="btn-group">
+                {% if owner and owner != "Global" %}
+                <a href="/delete_list/{{ owner }}" class="btn-delete-list" onclick="return confirm('Delete ALL domains for {{ owner }}?');"><i data-feather="trash-2" style="width:16px;"></i> Clear List</a>
+                {% endif %}
+                {% if not owner or owner == "Global" %}
+                <a href="/delete_all" class="btn-delete-list" onclick="return confirm('WARNING: This will delete the ENTIRE database. Are you sure?');">
+                    <i data-feather="trash-2" style="width:16px;"></i> Delete All
+                </a>
+                {% endif %}
+                <a href="/leads" class="btn-secondary"><i data-feather="list" style="width:16px;"></i> View Full List</a>
+                {% if owner and owner != "Global" %}
+                <button onclick="startScan('/scan_owner/{{ owner }}')" class="btn-scan"><i data-feather="play" style="width:16px;"></i> Scan {{ owner }} Leads ({{ total }})</button>
+                {% else %}
+                <button onclick="startScan('/scan_all')" class="btn-scan"><i data-feather="play" style="width:16px;"></i> Scan All</button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-value" style="color: var(--brand-green);">Ready</div>
+                </div>
+                <a href="/leads{% if owner and owner != 'Global' %}?search={{ owner }}{% endif %}" class="stat-card" style="text-decoration: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 12px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.02)';">
+                    <div class="stat-label">Total Leads</div>
+                    <div class="stat-value">{{ total }}</div>
+                </a>
+                <div class="stat-card">
+                    <div class="stat-label">Changes Detected</div>
+                    <div class="stat-value">{{ changes_count }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 24px; margin-bottom: 24px;">
+                <div class="card" style="flex: 1;">
+                    <div class="card-header"><h3 class="card-title">Market Share (Current)</h3></div>
+                    <div class="chart-wrapper"><canvas id="marketChart"></canvas></div>
+                </div>
+                <div class="card" style="flex: 1;">
+                    <div class="card-header"><h3 class="card-title">Competitor Trends</h3></div>
+                    <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i data-feather="activity" style="color: var(--brand-purple);"></i>
+                        <h3 class="card-title">Recent Activity</h3>
+                    </div>
+                    <div class="controls-area">
+                        <button class="btn-delete-rows" onclick="deleteActivities()">
+                            <i data-feather="trash-2" style="width:14px;"></i> Delete
+                        </button>
+                        <button class="btn-action" style="background:#4338ca;" onclick="toggleRecipients()">
+                            <i data-feather="users" style="width:14px;"></i> Users <i data-feather="chevron-down" style="width:14px;"></i>
+                        </button>
+                        <div id="recipientDropdown" class="dropdown-menu">
+                            <div style="padding:5px 8px; font-weight:700; font-size:12px; color:#6b7280; display:flex; justify-content:space-between;">
+                                <span>Select Recipients</span>
+                                <label style="cursor:pointer; color:#5b45ff;"><input type="checkbox" onchange="toggleAllRecipients(this)"> All</label>
+                            </div>
+                            <div style="border-top:1px solid #f3f4f6; margin:5px 0;"></div>
+                            {% for member in report_recipients %}
+                            <label class="dropdown-item"><input type="checkbox" class="recipient-check" value="{{ member }}"> {{ member }}</label>
+                            {% endfor %}
+                        </div>
+                        <button class="btn-action" onclick="sendReport()">
+                            <i data-feather="send" style="width:14px;"></i> Send Report
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px; padding-left:12px;"><input type="checkbox" onclick="toggleAllRows(this)"></th>
+                                <th style="text-align:left; color:#9ca3af; font-size:11px; text-transform:uppercase;">Domain</th>
+                                <th style="text-align:left; color:#9ca3af; font-size:11px; text-transform:uppercase;">Change</th>
+                                <th style="text-align:right; color:#9ca3af; font-size:11px; text-transform:uppercase;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in activity %}
+                            <tr id="row-{{ row.id }}">
+                                <td style="padding-left:12px;"><input type="checkbox" class="row-check" value="{{ row.id }}"></td>
+                                <td style="width: 25%; font-weight: 600;">{{ row.domain }}</td>
+                                <td><span class="change-pill">Switch</span> <span style="margin-left:8px; color:#6b7280;">{{ row.old }}</span> &rarr; <span style="color:var(--brand-green); font-weight:600;">{{ row.new }}</span></td>
+                                <td style="text-align: right; color:#6b7280; font-size:12px;">{{ row.date }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-gray);">No alerts found yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i data-feather="shield-off" style="color: var(--danger);"></i>
+                        <h3 class="card-title">Firewall Issues</h3>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr style="text-align:left; color:#9ca3af; font-size:11px; text-transform:uppercase;">
+                                <th style="padding-left:12px;">Domain</th>
+                                <th>Owner</th>
+                                <th style="text-align:right;">Last Attempt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in firewall_blocks %}
+                            <tr>
+                                <td style="padding-left:12px; font-weight: 600;">{{ row[0] }}</td>
+                                <td><span style="background:#f3f4f6; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; color:#5b45ff;">{{ row[1] }}</span></td>
+                                <td style="text-align: right; color:#6b7280; font-size:12px;">{{ row[2] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" style="text-align: center; padding: 40px; color: var(--text-gray);">No firewall blocks detected.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="drillDownSection" class="card">
+                <div class="card-header">
+                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i data-feather="list" style="color: var(--brand-purple);"></i>
+                            <h3 class="card-title" id="drillTitle">Domains</h3>
+                        </div>
+                        <a href="#" id="bulkDeleteBtn" class="btn-delete-manager" style="display:none;" onclick="return confirm('Delete ALL domains in this list?');">
+                            <i data-feather="trash-2" style="width: 14px;"></i> <span>Delete All</span>
+                        </a>
+                    </div>
+                </div>
+                <table class="table">
+                    <thead><tr style="text-align:left; color:var(--text-gray); font-size:12px; text-transform:uppercase;"><th>Domain</th><th>Info</th><th>Owner</th><th style="text-align:right;">Action</th></tr></thead>
+                    <tbody id="drillBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="manualModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">Add Domains Manually</div>
+            <form method="POST" action="/add_manual">
+                <div class="form-group">
+                    <label class="form-label">Assign To</label>
+                    <select name="owner" class="form-select" required>
+                        <option value="">Select BD Team Member</option>
+                        {% for member in team %}
+                        <option value="{{ member }}" {{ 'selected' if owner == member else '' }}>{{ member }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Domains (One per line)</label>
+                    <textarea name="domains" class="form-textarea" placeholder="example.com&#10;another.com" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="toggleModal()">Cancel</button>
+                    <button type="submit" class="btn-submit">Add Leads</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mini progress bar for active scans -->
+    <div id="miniProgress">
+        <div class="mp-title">
+            <span>⚡ Scanning...</span>
+            <span id="mpPct">0%</span>
+        </div>
+        <div class="mp-track"><div class="mp-bar" id="mpBar" style="width:0%"></div></div>
+        <div class="mp-domain" id="mpDomain">Starting...</div>
+    </div>
+
+    <script>
+        feather.replace();
+        const currentOwner = "{{ owner if owner else '' }}";
+
+        // MODAL TOGGLE FUNCTION
+        function toggleModal() {
+            const modal = document.getElementById('manualModal');
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        new Chart(document.getElementById('marketChart'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    data: {{ data | tojson }},
+                    backgroundColor: ['#5b45ff', '#00c853', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'],
+                    borderWidth: 0, hoverOffset: 8
+                }]
+            },
+            options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } }, onClick: (e, el) => { if(el.length) loadDrillDown(el[0].index, 'current'); } }
+        });
+
+        new Chart(document.getElementById('trendChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ trend_labels | tojson }},
+                datasets: [{ label: 'Switches', data: {{ trend_data | tojson }}, backgroundColor: '#5b45ff', borderRadius: 4 }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: {display:false} }, x: { grid: {display:false} } }, plugins: { legend: {display:false} }, onClick: (e, el) => { if(el.length) loadDrillDown(el[0].index, 'trend'); } }
+        });
+
+        function loadDrillDown(index, type) {
+            const label = type === 'current' ? {{ labels | tojson }}[index] : {{ trend_labels | tojson }}[index];
+            const apiEndpoint = type === 'current' ? `/api/domains/${encodeURIComponent(label)}` : `/api/trends/${encodeURIComponent(label)}`;
+            document.getElementById('drillTitle').innerText = type === 'current' ? `Domains managed by: ${label}` : `Domains switched to: ${label}`;
+
+            const btn = document.getElementById('bulkDeleteBtn');
+            if(type === 'current') {
+                btn.style.display = 'inline-flex';
+                btn.href = `/delete_manager/${encodeURIComponent(label)}?owner=${currentOwner}`;
+                btn.querySelector('span').innerText = `Delete All '${label}'`;
+            } else { btn.style.display = 'none'; }
+
+            const tbody = document.getElementById('drillBody');
+            tbody.innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center;">Loading...</td></tr>';
+            document.getElementById('drillDownSection').style.display = 'block';
+            document.getElementById('drillDownSection').scrollIntoView({ behavior: 'smooth' });
+
+            fetch(`${apiEndpoint}?owner=${currentOwner}`)
+                .then(response => response.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No domains found.</td></tr>'; return; }
+                    data.forEach(row => {
+                        tbody.innerHTML += `<tr><td style="font-weight:600;"><a href="http://${row.domain}" target="_blank" style="text-decoration:none; color:inherit;">${row.domain}</a></td><td>${row.info}</td><td><span style="background:#f3f4f6; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; color:#5b45ff;">${row.owner}</span></td><td style="text-align: right;"><a href="/delete_domain/${row.domain}?owner=${currentOwner}" onclick="return confirm('Delete?');"><i data-feather="trash-2" class="delete-icon" style="width:16px;"></i></a></td></tr>`;
+                    });
+                    feather.replace();
+                });
+        }
+
+        function toggleRecipients() {
+            const el = document.getElementById('recipientDropdown');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleAllRecipients(source) {
+            document.querySelectorAll('.recipient-check').forEach(c => c.checked = source.checked);
+        }
+
+        function toggleAllRows(source) {
+            document.querySelectorAll('.row-check').forEach(c => c.checked = source.checked);
+        }
+
+        function deleteActivities() {
+            const ids = Array.from(document.querySelectorAll('.row-check:checked')).map(c => c.value);
+            if (ids.length === 0) { alert('Select rows to delete first.'); return; }
+            if (!confirm('Are you sure you want to remove these items from history?')) return;
+
+            fetch('/delete_activities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    ids.forEach(id => {
+                        const row = document.getElementById('row-' + id);
+                        if(row) row.remove();
+                    });
+                } else { alert('Error: ' + data.message); }
+            });
+        }
+
+        function sendReport() {
+            const recipients = Array.from(document.querySelectorAll('.recipient-check:checked')).map(c => c.value);
+            const ids = Array.from(document.querySelectorAll('.row-check:checked')).map(c => c.value);
+
+            if (recipients.length === 0) { alert('Please select at least one recipient.'); return; }
+            if (ids.length === 0) { alert('Please select at least one activity row to report.'); return; }
+
+            const btn = document.querySelector('button[onclick="sendReport()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Sending...';
+            btn.disabled = true;
+
+            fetch('/send_report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipients: recipients, ids: ids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Report sent successfully!');
+                    document.getElementById('recipientDropdown').style.display = 'none';
+                } else { alert('Error: ' + data.message); }
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            })
+            .catch(err => {
+                alert('Connection Error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.btn-action') && !event.target.closest('.dropdown-menu')) {
+                document.getElementById('recipientDropdown').style.display = 'none';
+            }
+            if (event.target.classList.contains('modal-overlay')) {
+                toggleModal();
+            }
+        }
+
+        // --- SCANNING LOGIC ---
+        function startScan(endpoint) {
+            fetch(endpoint, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    startMiniProgress();
+                } else {
+                    alert(data.message || 'Scan already running.');
+                }
+            });
+        }
+
+        let miniPollInterval;
+        function startMiniProgress() {
+            document.getElementById('miniProgress').style.display = 'block';
+            clearInterval(miniPollInterval);
+            miniPollInterval = setInterval(pollMini, 800);
+        }
+
+        function pollMini() {
+            fetch('/api/scan_status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('mpBar').style.width = data.percent + '%';
+                    document.getElementById('mpPct').textContent = data.percent + '%';
+                    let domainText = data.domain || '...';
+                    if (data.total > 0 && data.domain) {
+                        domainText = `[${data.current}/${data.total}] ${data.domain}`;
+                    }
+                    document.getElementById('mpDomain').textContent = domainText;
+                    
+                    if (!data.running && data.total > 0) {
+                        clearInterval(miniPollInterval);
+                        document.getElementById('mpDomain').textContent = '✅ Done! Reloading...';
+                        setTimeout(() => { location.reload(); }, 1500);
+                    }
+                });
+        }
+
+        // Check if scan running on load
+        fetch('/api/scan_status').then(r => r.json()).then(data => {
+            if (data.running) startMiniProgress();
+        });
+    </script>
+</body>
+</html>

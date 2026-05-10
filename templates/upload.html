@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Import Leads</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f9fafb; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); width: 400px; border: 1px solid #e5e7eb; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; background: #f9fafb; margin-bottom: 20px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #6d28d9; }
+        .back { display: block; text-align: center; margin-top: 20px; color: #6b7280; text-decoration: none; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 30px; color: #111;">Import Leads</h2>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+
+            <label>Select CSV File</label>
+            <input type="file" name="file" accept=".csv" required>
+
+            <label>Assign List To:</label>
+            <select name="owner_name">
+                <option value="Global" style="font-weight: bold;">🌍 Global / Master List</option>
+                <hr>
+                {% for member in team %}
+                <option value="{{ member }}">{{ member }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Import Leads</button>
+        </form>
+        <a href="/dashboard" class="back">Cancel</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scanning... – Competitor Lead Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 56px 64px;
+            width: 560px;
+            text-align: center;
+        }
+        .radar-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #7c3aed, #5b45ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            box-shadow: 0 0 40px rgba(91,69,255,0.5);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(91,69,255,0.5); }
+            50% { box-shadow: 0 0 60px rgba(91,69,255,0.9); }
+        }
+        .radar-icon svg { width: 32px; height: 32px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 40px; }
+
+        .progress-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 100px;
+            height: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #5b45ff, #00c8ff);
+            border-radius: 100px;
+            width: 0%;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 100px;
+            animation: shimmer 1.2s infinite;
+        }
+        @keyframes shimmer { 0%,100% { opacity: 0.2; } 50% { opacity: 0.8; } }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+        .stat-count { font-size: 13px; color: rgba(255,255,255,0.5); }
+        .stat-percent { font-size: 22px; font-weight: 800; color: #5b45ff; }
+        .current-domain {
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            font-family: monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 36px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .current-domain span { color: #00c8ff; }
+
+        .phases {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+        .phase-pill {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+        .phase-pill.active {
+            border-color: #5b45ff;
+            background: rgba(91,69,255,0.15);
+            color: white;
+        }
+        .phase-pill.done {
+            border-color: #00c853;
+            background: rgba(0,200,83,0.1);
+            color: #00c853;
+        }
+
+        .btn-done {
+            display: none;
+            background: linear-gradient(135deg, #7c3aed, #5b45ff);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(91,69,255,0.4);
+            transition: 0.2s;
+        }
+        .btn-done:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(91,69,255,0.5); }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="radar-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 2 12 12 17 17"/></svg>
+    </div>
+
+    <h1>Scanning Domains</h1>
+    <p class="subtitle">Engine V11 — Fast HTTP + Stealth Fallback</p>
+
+    <div class="phases">
+        <div class="phase-pill" id="phase1">⚡ Phase 1: Fast HTTP</div>
+        <div class="phase-pill" id="phase2">🛡️ Phase 2: Stealth</div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-count" id="statCount">0 / 0 domains</div>
+        <div class="stat-percent" id="statPercent">0%</div>
+    </div>
+
+    <div class="progress-track">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="current-domain" id="currentDomain">
+        Initializing scan engine...
+    </div>
+
+    <a href="#" class="btn-done" id="btnDone">View Results →</a>
+</div>
+
+<script>
+    let redirectTo = '/dashboard';
+    let pollInterval;
+
+    function poll() {
+        fetch('/api/scan_status')
+            .then(r => r.json())
+            .then(data => {
+                redirectTo = data.redirect_to || '/dashboard';
+
+                const pct = data.percent || 0;
+                document.getElementById('progressBar').style.width = pct + '%';
+                document.getElementById('statPercent').textContent = pct + '%';
+                document.getElementById('statCount').textContent =
+                    `${data.current} / ${data.total} domains`;
+
+                const domain = data.domain || '';
+                const countStr = `[${data.current}/${data.total}]`;
+                
+                if (domain.startsWith('[stealth]')) {
+                    document.getElementById('currentDomain').innerHTML =
+                        `🛡️ ${countStr} Stealth mode → <span>${domain.replace('[stealth] ', '')}</span>`;
+                    document.getElementById('phase1').className = 'phase-pill done';
+                    document.getElementById('phase2').className = 'phase-pill active';
+                } else if (domain) {
+                    document.getElementById('currentDomain').innerHTML =
+                        `⚡ ${countStr} Fast scan → <span>${domain}</span>`;
+                    document.getElementById('phase1').className = 'phase-pill active';
+                    document.getElementById('phase2').className = 'phase-pill';
+                }
+
+                if (!data.running && data.total > 0) {
+                    clearInterval(pollInterval);
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('statPercent').textContent = '100%';
+                    document.getElementById('currentDomain').innerHTML = '✅ <span>Scan complete!</span>';
+                    document.getElementById('phase1').className = 'phase-pill done';
+                    document.getElementById('phase2').className = 'phase-pill done';
+                    const btn = document.getElementById('btnDone');
+                    btn.href = redirectTo;
+                    btn.style.display = 'inline-block';
+                    // Auto-redirect after 2 seconds
+                    setTimeout(() => { window.location.href = redirectTo; }, 2000);
+                }
+            })
+            .catch(() => {});
+    }
+
+    // Start polling immediately
+    poll();
+    pollInterval = setInterval(poll, 800);
+</script>
+</body>
+</html>

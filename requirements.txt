@@ -1,0 +1,17 @@
+# === Competitor dashboard (ads.txt lead radar) — dependencies ===
+
+# Web Framework
+Flask==3.0.2
+
+# Web Scraping Engine (stealth browser + fast fetcher)
+scrapling
+
+# Browser automation (required by scrapling for stealth mode)
+playwright
+patchright
+
+# Fast JSON serialization (scrapling dependency)
+msgspec
+
+# HTTP requests (used by simple_scanner.py)
+requests

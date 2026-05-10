@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login - Competitor Lead Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #7c3aed 0%, #5b45ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 16px;
+            width: 340px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 22px;
+            color: #5b45ff;
+            margin-bottom: 30px;
+        }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus { border-color: #5b45ff; background: white; }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #5b45ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        button:hover { background: #4633cc; transform: translateY(-1px); }
+
+        .error {
+            background: #fef2f2;
+            color: #ef4444;
+            font-size: 13px;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #fee2e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">Competitor Lead Radar</div>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+</body>
+</html>
